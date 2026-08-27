@@ -3,7 +3,7 @@
   "name": "repair-fa-documents-settings",
   "title": "配置 FA Documents 管理页",
   "description": "新增管理员 FA Documents Tab，管理返修文档索引和混合检索配置。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

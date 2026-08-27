@@ -47,6 +47,7 @@
 	import AdminAnalytics from '$lib/components/admin/Analytics.svelte';
 	import AdminIntegrations from '$lib/components/admin/Settings/Integrations.svelte';
 	import AdminDocuments from '$lib/components/admin/Settings/Documents.svelte';
+	import AdminFADocuments from '$lib/components/admin/Settings/FADocuments.svelte';
 	import AdminWebSearch from '$lib/components/admin/Settings/WebSearch.svelte';
 	import AdminCodeExecution from '$lib/components/admin/Settings/CodeExecution.svelte';
 	import AdminInterface from '$lib/components/admin/Settings/Interface.svelte';
@@ -159,6 +160,7 @@
 		'admin:analytics': 'Quality',
 		'admin:integrations': 'Tools',
 		'admin:documents': 'Tools',
+		'admin:fa-documents': 'Tools',
 		'admin:web': 'Tools',
 		'admin:code-execution': 'Tools',
 		'admin:pipelines': 'Tools',
@@ -764,6 +766,11 @@
 			keywords: ['documents', 'files', 'rag', 'knowledge', 'upload', 'embedding', 'vector db']
 		},
 		{
+			id: 'admin:fa-documents',
+			title: 'FA Documents',
+			keywords: ['fa', 'repair', 'documents', 'mineru', 'embedding', 'reranker', 'hybrid search']
+		},
+		{
 			id: 'admin:web',
 			title: 'Web Search',
 			keywords: ['web search', 'google', 'bing', 'duckduckgo', 'serp', 'searxng', 'tavily', 'exa']
@@ -1283,6 +1290,8 @@
 				<AdminIntegrations {saveSettings} />
 			{:else if selectedTab === 'admin:documents'}
 				<AdminDocuments on:save={adminConfigSaveHandler} />
+			{:else if selectedTab === 'admin:fa-documents'}
+				<AdminFADocuments />
 			{:else if selectedTab === 'admin:web'}
 				<AdminWebSearch saveHandler={adminConfigSaveHandler} />
 			{:else if selectedTab === 'admin:code-execution'}
