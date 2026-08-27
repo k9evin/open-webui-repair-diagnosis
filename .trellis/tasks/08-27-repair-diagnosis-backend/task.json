@@ -3,7 +3,7 @@
   "name": "repair-diagnosis-backend",
   "title": "实现返修诊断后端",
   "description": "实现返修数据、受控检索、反馈和审核 API，保持普通 RAG 独立。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

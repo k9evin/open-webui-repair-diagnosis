@@ -166,6 +166,7 @@ from open_webui.routers import (
     openai,
     pipelines,
     prompts,
+    repair,
     retrieval,
     scim,
     skills,
@@ -827,6 +828,8 @@ app.include_router(images.router, prefix='/api/v1/images', tags=['images'])
 
 app.include_router(audio.router, prefix='/api/v1/audio', tags=['audio'])
 app.include_router(retrieval.router, prefix='/api/v1/retrieval', tags=['retrieval'])
+app.include_router(repair.router, prefix='/api/repair', tags=['repair'])
+app.include_router(repair.admin_router, prefix='/api/admin/repair-cases', tags=['repair'])
 
 app.include_router(configs.router, prefix='/api/v1/configs', tags=['configs'])
 
