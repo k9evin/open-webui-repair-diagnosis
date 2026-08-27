@@ -116,3 +116,67 @@ async def test_fallback_is_limited_to_same_product_type_and_failure_type(monkeyp
     finally:
         await session.close()
         await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_reference_metadata_filter_excludes_out_of_scope_chunks(monkeypatch):
+    engine = create_async_engine('sqlite+aiosqlite:///:memory:')
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    session = async_sessionmaker(engine, expire_on_commit=False)()
+
+    @asynccontextmanager
+    async def test_db_context(_=None):
+        yield session
+
+    monkeypatch.setattr(repair, 'get_async_db_context', test_db_context)
+    try:
+        scoped_form = repair.RepairReferenceDocumentForm(
+            file_id='file-voa',
+            document_type='debug_guide',
+            pn=['PCBA-001-A'],
+            product_type='PCBA',
+            failure_type='VOA',
+            plant='A厂',
+        )
+        document, _ = await repair.RepairReferences.create_document(
+            scoped_form,
+            'voa-debug.md',
+            '第一段：检查 VOA 电流。\n\n第二段：记录测量值。',
+            'admin',
+            {'engine': 'MinerU'},
+            30,
+            0,
+        )
+        await repair.RepairReferences.create_document(
+            repair.RepairReferenceDocumentForm(
+                file_id='file-other',
+                document_type='work_requirement',
+                pn=['EDFA-001-A'],
+                product_type='EDFA',
+                failure_type='VOA',
+                plant='A厂',
+            ),
+            'edfa-work.md',
+            '检查 VOA 电流。这条辅助材料不适用于 PCBA。',
+            'admin',
+            {'engine': 'MinerU'},
+            30,
+            0,
+        )
+
+        candidates = await repair.RepairReferences.get_metadata_candidates(
+            'PCBA-001-A', None, 'PCBA', 'VOA', 'A厂'
+        )
+
+        assert candidates
+        assert {chunk.document_id for chunk in candidates} == {document.id}
+        full_text = await repair.RepairReferences.search_full_text(
+            [chunk.id for chunk in candidates], '检查 VOA 电流', 10
+        )
+        assert full_text
+        assert {chunk.document_id for chunk in full_text} == {document.id}
+
+    finally:
+        await session.close()
+        await engine.dispose()

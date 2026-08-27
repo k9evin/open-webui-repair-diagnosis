@@ -830,6 +830,7 @@ app.include_router(audio.router, prefix='/api/v1/audio', tags=['audio'])
 app.include_router(retrieval.router, prefix='/api/v1/retrieval', tags=['retrieval'])
 app.include_router(repair.router, prefix='/api/repair', tags=['repair'])
 app.include_router(repair.admin_router, prefix='/api/admin/repair-cases', tags=['repair'])
+app.include_router(repair.fa_documents_router, prefix='/api/admin/fa-documents', tags=['repair'])
 
 app.include_router(configs.router, prefix='/api/v1/configs', tags=['configs'])
 

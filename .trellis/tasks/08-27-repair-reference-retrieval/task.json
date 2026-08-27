@@ -3,7 +3,7 @@
   "name": "repair-reference-retrieval",
   "title": "实现返修辅助文档检索",
   "description": "导入 Work Requirements 与 debug 文档，并将其纳入受控混合检索。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
