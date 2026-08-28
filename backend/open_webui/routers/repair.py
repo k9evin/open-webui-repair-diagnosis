@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import time
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from langchain_core.documents import Document
@@ -25,6 +26,7 @@ from open_webui.retrieval.loaders.main import Loader
 from open_webui.retrieval.utils import get_embedding_function, get_loader_config, get_reranking_function
 from open_webui.retrieval.vector.async_client import ASYNC_VECTOR_DB_CLIENT
 from open_webui.utils.auth import get_admin_user, get_verified_user
+from openpyxl import load_workbook
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -68,6 +70,43 @@ class RetrieveForm(BaseModel):
     plant: str
     failure_description: str
     failure_type: str | None = None
+
+
+class RepairCaseImportForm(BaseModel):
+    file_id: str
+
+
+def _import_value(row: dict, key: str) -> str | None:
+    value = row.get(key)
+    return str(value).strip() if value is not None and str(value).strip() else None
+
+
+def _read_repair_case_xlsx(path: str) -> list[dict]:
+    workbook = load_workbook(Path(path), read_only=True, data_only=True)
+    sheet = workbook['返修案例'] if '返修案例' in workbook.sheetnames else workbook.active
+    rows = sheet.iter_rows(values_only=True)
+    headers = [str(value).strip() if value else '' for value in next(rows)]
+    return [dict(zip(headers, values)) for values in rows if any(value is not None for value in values)]
+
+
+def _repair_case_form_from_import(row: dict, source_file: str, source_row_id: str) -> RepairCaseForm | None:
+    pn = _import_value(row, 'PN')
+    product_type = _import_value(row, '产品类型')
+    failure_description = _import_value(row, '故障描述（原始）') or '未填写故障描述（原始）'
+    if not pn or not product_type:
+        return None
+    return RepairCaseForm(
+        pn=pn, sn=_import_value(row, 'SN'), product_type=product_type,
+        product_family=_import_value(row, '产品族'), plant=_import_value(row, '分厂'),
+        failure_type=_import_value(row, '失效类型'), failure_description=failure_description,
+        repair_steps=_import_value(row, '维修步骤（原始）'), test_result=_import_value(row, '测试结果（原始）'),
+        measurement_status=_import_value(row, '测量状态') or 'not_recorded',
+        original_part_pn=_import_value(row, '原件 PN'), replacement_part_pn=_import_value(row, '替换件 PN'),
+        replacement_part_raw=_import_value(row, '替换件描述（原始）'), final_result=_import_value(row, '最终结果'),
+        retest_result=_import_value(row, '复测结果'), root_cause=_import_value(row, '根因（原始）'),
+        source_file=source_file, source_row_id=source_row_id,
+        raw_record_json={key: value for key, value in row.items() if value is not None},
+    )
 
 
 class ReviewForm(BaseModel):
@@ -521,6 +560,54 @@ async def rebuild_fa_documents_index(request: Request, user=Depends(get_admin_us
         ) from exc
     await RepairAuditLogs.record(user.id, 'fa_documents_rebuilt', payload={'chunk_count': len(chunks)})
     return {'collection': FA_DOCUMENTS_COLLECTION, 'chunk_count': len(chunks), 'index': _index_status_response(index)}
+
+
+async def _load_repair_case_import(file_id: str):
+    file = await Files.get_file_by_id(file_id)
+    if not file or not file.path or not file.filename.lower().endswith('.xlsx'):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='请选择已上传的 XLSX 返修案例文件。')
+    try:
+        rows = await asyncio.to_thread(_read_repair_case_xlsx, file.path)
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f'无法读取 XLSX：{exc}') from exc
+    return file, rows
+
+
+@fa_documents_router.post('/cases/preview')
+async def preview_repair_case_import(form_data: RepairCaseImportForm, user=Depends(get_admin_user)):
+    file, rows = await _load_repair_case_import(form_data.file_id)
+    valid = [
+        row
+        for index, row in enumerate(rows, start=2)
+        if _repair_case_form_from_import(row, file.filename, str(index))
+    ]
+    return {
+        'file_name': file.filename,
+        'total_rows': len(rows),
+        'valid_rows': len(valid),
+        'failed_rows': len(rows) - len(valid),
+        'preview': valid[:10],
+    }
+
+
+@fa_documents_router.post('/cases/import')
+async def import_repair_cases(form_data: RepairCaseImportForm, user=Depends(get_admin_user)):
+    file, rows = await _load_repair_case_import(form_data.file_id)
+    imported = 0
+    failed_rows = []
+    for index, row in enumerate(rows, start=2):
+        case_form = _repair_case_form_from_import(row, file.filename, str(index))
+        if not case_form:
+            failed_rows.append(index)
+            continue
+        await RepairCases.create_case(case_form, user.id, review_status='pending', case_prefix='IMP')
+        imported += 1
+    await RepairAuditLogs.record(
+        user.id,
+        'repair_cases_imported',
+        payload={'file_id': file.id, 'imported': imported, 'failed_rows': failed_rows},
+    )
+    return {'source_file': file.filename, 'imported': imported, 'failed_rows': failed_rows}
 
 
 @admin_router.get('')

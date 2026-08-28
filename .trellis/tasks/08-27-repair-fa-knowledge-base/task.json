@@ -3,7 +3,7 @@
   "name": "repair-fa-knowledge-base",
   "title": "实现 FA 知识库管理",
   "description": "提供返修案例和辅助文档的独立上传、导入、管理与本地模拟数据初始化。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

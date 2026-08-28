@@ -182,6 +182,18 @@
 							</a>
 						{/if}
 
+						{#if $user?.role === 'admin'}
+							<a
+								draggable="false"
+								aria-current={activeWorkspaceSection === 'fa-knowledge' ? 'page' : null}
+								class="min-w-fit px-1 text-sm inline-flex items-center gap-1 {activeWorkspaceSection ===
+								'fa-knowledge'
+									? 'text-gray-900 dark:text-gray-100'
+									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition select-none"
+								href="/workspace/fa-knowledge"><span>FA Knowledge</span></a
+							>
+						{/if}
+
 						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.prompts}
 							<a
 								draggable="false"
