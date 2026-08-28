@@ -2,6 +2,8 @@
 	import { toast } from 'svelte-sonner';
 	import { uploadFile } from '$lib/apis/files';
 	import { importRepairCases, previewRepairCases } from '$lib/apis/repair/knowledge';
+	import Badge from '$lib/components/common/Badge.svelte';
+	import Spinner from '$lib/components/common/Spinner.svelte';
 
 	let selected: File | null = null;
 	let preview: any = null;
@@ -54,7 +56,10 @@
 	<div
 		class="mt-6 rounded-2xl border border-gray-100 bg-white p-5 dark:border-gray-850 dark:bg-gray-900"
 	>
-		<h2 class="font-medium">导入返修案例 XLSX</h2>
+		<div class="flex items-center gap-2">
+			<h2 class="font-medium">导入返修案例 XLSX</h2>
+			<Badge type="muted" content="FA only" />
+		</div>
 		<input class="mt-4 block text-sm" type="file" accept=".xlsx" on:change={selectFile} />
 		<p class="mt-2 text-xs text-gray-500">
 			支持预览失败行；导入后案例默认为待审核，不会直接进入诊断。
@@ -62,7 +67,8 @@
 		<button
 			class="mt-4 rounded-xl bg-gray-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-gray-900"
 			on:click={runPreview}
-			disabled={!selected || loading}>{loading ? '处理中…' : '预览导入'}</button
+			disabled={!selected || loading}
+			>{#if loading}<Spinner className="size-3" />{/if}{loading ? '处理中…' : '预览导入'}</button
 		>
 		{#if preview}<div class="mt-5 rounded-xl bg-gray-50 p-4 text-sm dark:bg-gray-850">
 				<div>文件：{preview.file_name}</div>

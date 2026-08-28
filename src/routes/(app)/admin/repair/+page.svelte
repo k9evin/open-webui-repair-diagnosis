@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { listRepairCases, reviewRepairCase } from '$lib/apis/repair/adminCases';
+	import Badge from '$lib/components/common/Badge.svelte';
+	import Spinner from '$lib/components/common/Spinner.svelte';
 	let items: any[] = [];
 	let status = 'pending';
 	let loading = true;
@@ -42,7 +44,7 @@
 			></select
 		>
 	</div>
-	{#if loading}<p class="mt-8 text-sm text-gray-500">加载中…</p>{:else if !items.length}<p
+	{#if loading}<div class="mt-8"><Spinner className="size-5" /></div>{:else if !items.length}<p
 			class="mt-8 rounded-xl border border-dashed p-8 text-center text-sm text-gray-500"
 		>
 			暂无案例。
@@ -51,7 +53,16 @@
 					class="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-850 dark:bg-gray-900"
 				>
 					<div class="flex justify-between">
-						<div class="font-medium">{item.id} · {item.pn_raw}</div>
+						<div class="flex items-center gap-2 font-medium">
+							{item.id} · {item.pn_raw}<Badge
+								type={status === 'approved'
+									? 'success'
+									: status === 'rejected'
+										? 'error'
+										: 'warning'}
+								content={status}
+							/>
+						</div>
 						<span class="text-xs text-gray-500"
 							>源文件 {item.source_file ?? '未记录'} / 第 {item.source_row_id ?? '?'} 行</span
 						>

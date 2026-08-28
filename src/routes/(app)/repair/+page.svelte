@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import Modal from '$lib/components/common/Modal.svelte';
+	import Badge from '$lib/components/common/Badge.svelte';
+	import Spinner from '$lib/components/common/Spinner.svelte';
 	import {
 		retrieveRepairDiagnosis,
 		submitRepairFeedback,
@@ -140,7 +142,10 @@
 			<button
 				class="mt-4 w-full rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-gray-900"
 				disabled={loading}
-				type="submit">{loading ? '正在诊断…' : '开始诊断'}</button
+				type="submit"
+				>{#if loading}<Spinner className="size-3" />{/if}{loading
+					? '正在诊断…'
+					: '开始诊断'}</button
 			>
 		</form>
 
@@ -152,7 +157,17 @@
 				<p class="mt-4 text-sm text-gray-500">填写信息后将按元数据范围检索已审核案例和辅助文档。</p>
 			{:else}
 				<div class="mt-4 rounded-xl bg-gray-50 p-3 text-sm dark:bg-gray-850">
-					<div class="font-medium">查询 SN：{maskSn(query.sn)}</div>
+					<div class="flex items-center gap-2 font-medium">
+						查询 SN：{maskSn(query.sn)}
+						<Badge
+							type="info"
+							content={result.scope === 'exact_pn'
+								? '同 PN'
+								: result.scope === 'same_product_type_reference'
+									? '同类型参考'
+									: '无可靠案例'}
+						/>
+					</div>
 					<div class="mt-1 text-gray-500">{result.limitations}</div>
 				</div>
 				{#if result.sop}
